@@ -1,47 +1,68 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import './App.css';
-import './polyfills.js';
-// import jwt from 'jsonwebtoken';
-// import jwt from 'react-jwt';
+import { useJwt } from "react-jwt";
+import { Context } from './Context';
 
 function App() {
-  // Genera un token con un tiempo de expiración de 1 hora
-//     const token = jwt.sign({ username: 'usuario123' }, 'mi_clave_secreta', { expiresIn: '1h' });
-//   // Muestra el token en la consola del navegador
-// console.log(token);
+  const { isLogin, setIsLogin } = useContext(Context)
+  const [value, setValue] = useState('')
+  const [valuePass, setValuePass] = useState('')
+  const [token, setToken] = useState('')
 
-useEffect(() => {
-  fetch('https://backend-login-puce.vercel.app/')
-  .then(response => response.json())
-  .then(data => console.log(data))
-  .catch(error => console.error(error));
-}, [])
+  useEffect(() => {
+    const session = window.localStorage.getItem('session')
+    if (session) {
+      setToken(session)
+      setIsLogin(true);
+    }
+  }, [])
+  
+  const { decodedToken, isExpired } = useJwt(token);
 
-const handleLogin = (event) => {
-  event.preventDefault();
-  const requestOptions = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'johndoe', password: 'secretpassword' })
-  };
+  const handleLogin = (event) => {
+    event.preventDefault();
+    const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: value, password: valuePass })
+    };
+    const url = 'https://backend-login-puce.vercel.app/'
+    fetch(url, requestOptions)
+      .then(response => response.json())
+      .then(data => {
+        if (data.token) {
+          setIsLogin(true);
+          setToken(data.token);
+          localStorage.setItem('session', data.token)
+        }
+      })
+      .catch(error => {
+        setIsLogin(false)
+      });
+    setValue('');
+    setValuePass('');
+  }
 
-  fetch('https://backend-login-puce.vercel.app/', requestOptions)
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error(error));
+  function handleChange(event) {
+    setValue(event.target.value);
+  }
+
+  function handleChangePass(event) {
+    setValuePass(event.target.value);
   }
 
   return (
     <div className="login-page">
-    <div className="form">
-      <form className="login-form" onSubmit={handleLogin}>
-        <input type="text" placeholder="username" />
-        <input type="password" placeholder="password" />
-        <button>login</button>
-        <p className="message">Not registered? <a href="#">Create an account</a></p>
-      </form>
+      <div className="form">
+        <form className="login-form" onSubmit={(event) => handleLogin(event)}>
+          {isLogin ? `Hola ${decodedToken?.username}` : "Logeate porfavor"}
+          <input value={value} onChange={handleChange} type="text" placeholder="username" />
+          <input value={valuePass} onChange={handleChangePass} type="password" placeholder="password" />
+          <button type='submit'>login</button>
+          <p className="message">Not registered? <a href="#">Create an account</a></p>
+        </form>
+      </div>
     </div>
-  </div>
   );
 }
 
