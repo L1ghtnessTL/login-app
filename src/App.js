@@ -16,7 +16,7 @@ function App() {
       setIsLogin(true);
     }
   }, [])
-  
+
   const { decodedToken, isExpired } = useJwt(token);
 
   const handleLogin = (event) => {
@@ -51,11 +51,24 @@ function App() {
     setValuePass(event.target.value);
   }
 
+  function handleLogOut(event) {
+    event.preventDefault();
+    localStorage.removeItem('session');
+    setIsLogin(false);
+    window.location.reload();
+  }
   return (
     <div className="login-page">
       <div className="form">
         <form className="login-form" onSubmit={(event) => handleLogin(event)}>
-          {isLogin ? `Hola ${decodedToken?.username}` : "Logeate porfavor"}
+          {isLogin ? (
+            <>
+              <button onClick={handleLogOut}>Cerrar sesión</button>
+              <p>Hola {decodedToken?.username}</p>
+            </>
+          ) : (
+            <p>Logeate porfavor</p>
+          )}
           <input value={value} onChange={handleChange} type="text" placeholder="username" />
           <input value={valuePass} onChange={handleChangePass} type="password" placeholder="password" />
           <button type='submit'>login</button>
